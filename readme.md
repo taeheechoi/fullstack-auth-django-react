@@ -1,6 +1,8 @@
 ### Configure VS Code for Django
 https://code.visualstudio.com/docs/python/tutorial-django
+
 Interpreter (Ctrl+Shift+P) ./backend/venv/bin/python3
+
 Debugger. Add configure. 
 ```
     "configurations": [
@@ -47,13 +49,17 @@ docker-compose.yml
         driver: local
 
 ```
+```
 ~/development/fullstack-auth-django-react$ docker-compose up -d
 ~/development/fullstack-auth-django-react$ docker ps
+
 http://localhost:8080/
 system: PostgreSQL
 server: db
 username: postgres
 password: example
+```
+
 ```
     CREATE DATABASE fullstackauth;
 
@@ -76,11 +82,14 @@ password: example
 ```
 
 ### Backend - Django 
+```
 ~/development/fullstack-auth-django-react/backend$ python3 -m venv venv
 ~/development/fullstack-auth-django-react/backend$ source venv/bin/activate
 (venv) ~/development/fullstack-auth-django-react/backend$ pip install django djangorestframework psycopg2-binary djangorestframework-simplejwt
 (venv) ~/development/fullstack-auth-django-react/backend$ django-admin startproject fullstack_auth
 (venv) ~/development/fullstack-auth-django-react/backend/fullstack_auth$ python manage.py startapp auth
+```
+
 ```
 settings.py
     INSTALLED_APPS = [
@@ -105,9 +114,12 @@ settings.py
     }
 
 ```
+
+```
 (venv) ~/development/fullstack-auth-django-react/backend/fullstack_auth$ python manage.py createsuperuser 
 ID: fullstackauth
 PW: fullstackauth
+```
 
 ### Login User
 ```
@@ -159,11 +171,14 @@ auth/urls.py
     ]
 ```
 
-Postman
+### Postman
+```
 POST http://127.0.0.1:8000/auth/login/
 No Auth,
 username: fullstackauth
 password: fullstackauth
+```
+
 ```
     {
         "refresh": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTY0NDE4ODE1MywiaWF0IjoxNjQ0MTAxNzUzLCJqdGkiOiI0YmYyM2Q1MWQxMTE0NmM2OWQ5MzBlNzM4NzFkNTljNSIsInVzZXJfaWQiOjEsInVzZXJuYW1lIjoiZnVsbHN0YWNrYXV0aCJ9.9gOxe13wEmr5czeb2xy79Pkp07L3stVzfZoogni05RM",
