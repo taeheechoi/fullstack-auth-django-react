@@ -82,6 +82,8 @@ password: example
 ```
 
 ### Backend - Django 
+Training from: https://medium.com/django-rest/django-rest-framework-jwt-authentication-94bee36f2af8
+
 ```
 ~/development/fullstack-auth-django-react/backend$ python3 -m venv venv
 ~/development/fullstack-auth-django-react/backend$ source venv/bin/activate
@@ -92,8 +94,11 @@ password: example
 
 ```
 settings.py
+    from datetime import timedelta
+
     INSTALLED_APPS = [
         'rest_framework',
+        'rest_framework_simplejwt', if localizations/translations needed
         -- 'auth' DO NOT ADD auth as we will use 'django.contrib.auth',
     ]
 
@@ -106,6 +111,18 @@ settings.py
             'HOST': '127.0.0.1',
             'PORT': '5432',
         }
+    }
+    
+    REST_FRAMEWORK = {
+        'DEFAULT_AUTHENTICATION_CLASSES': [
+            'rest_framework_simplejwt.authentication.JWTAuthentication',
+        ],
+    }
+
+
+    SIMPLE_JWT = {
+        'REFRESH_TOKEN_LIFETIME': timedelta(days=15),
+        'ROTATE_REFRESH_TOKENS': True,
     }
 
 ```
@@ -166,18 +183,43 @@ auth/urls.py
     ]
 ```
 
-### Postman
+### Postman - Login to get tokens
 ```
 POST http://127.0.0.1:8000/auth/login/
 No Auth,
-username: fullstackauth
-password: fullstackauth
 
+Body:
+    username: fullstackauth
+    password: fullstackauth
+
+Result:
     {
         "refresh": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTY0NDE4ODE1MywiaWF0IjoxNjQ0MTAxNzUzLCJqdGkiOiI0YmYyM2Q1MWQxMTE0NmM2OWQ5MzBlNzM4NzFkNTljNSIsInVzZXJfaWQiOjEsInVzZXJuYW1lIjoiZnVsbHN0YWNrYXV0aCJ9.9gOxe13wEmr5czeb2xy79Pkp07L3stVzfZoogni05RM",
         "access": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNjQ0MTAyMDUzLCJpYXQiOjE2NDQxMDE3NTMsImp0aSI6ImUzYWUxYjQ1NzU0MzQxM2Y4NmMxYWNhMzc1YTQ5YzE3IiwidXNlcl9pZCI6MSwidXNlcm5hbWUiOiJmdWxsc3RhY2thdXRoIn0.5hSdBrotZtKtzmdiuT0ALNZvuS5wjBjI6Aa9ohSuZpA"
     }
 ```
+
+### Postman - Refresh tokens
+```
+POST http://127.0.0.1:8000/auth/refresh/
+Headers:
+    Authorization: Bearer "access token"
+    Content-Type: application/json
+
+Body:
+    raw
+    {
+        "refresh": "refresh token",
+    }
+
+Result:
+    {
+        "access": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNjQ0MTc3NjE2LCJpYXQiOjE2NDQxNzcwNDAsImp0aSI6IjhiYjFmYWE3ZWFlNzQyNjI5ZGU3NTZjZTZmODRjZWQyIiwidXNlcl9pZCI6MX0.rIN3UcmzCAP88ciBWFw2-8ZTuQ5a00MvXRJv65YltuM",
+        "refresh": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTY0NTQ3MzMxNiwiaWF0IjoxNjQ0MTc3MzE2LCJqdGkiOiI1NGMyOTM5YTMwZjQ0MGQ2OThiMmI5NjNjYzY0YjkyMCIsInVzZXJfaWQiOjF9.6iRfNFlTvx35KSIGI0HpqCcZzWGaoKoeRP2UDlrpYe0"
+    }
+```
+
+
 ### Register User 
 ```
 auth/serializers.py
@@ -239,7 +281,7 @@ urlpatterns = [
 ]
 ```
 
-### Postman
+### Postman - Register a new user
 ```
 POST http://127.0.0.1:8000/register/
 No Auth,
@@ -310,7 +352,7 @@ auth/urls.py
     ]
 ```
 
-### Postman
+### Postman - Change password
 ```
 PUT http://127.0.0.1:8000/auth/change_password/2/
 No Auth,
@@ -384,7 +426,7 @@ urlpatterns = [
 ]
 ```
 
-### Postman
+### Postman - Update user profile
 ```
 PUT http://127.0.0.1:8000/auth/update_user/2/
 No Auth,
@@ -413,3 +455,178 @@ INSTALLED_APPS = [
 (venv) ~/development/fullstack-auth-django-react/backend/fullstack_auth$ python manage.py migrate
 
 ```
+
+Cron job for blacklist's flushexpiredtokens: delete any tokens from the outstanding list and blacklist that have expired
+
+Blacklist not compatible with custom fields (MyTokenObtainPairSerializer) --> Default view TokenObtainPairSerializer is needed
+
+```
+auth/urls.py
+    from .views import TokenObtainPairView # MyTokenObtainPairView, custom field not supported by blacklist 
+
+    urlpatterns = [
+        path('login/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
+    ]
+```
+
+```
+auth/views.py
+    from rest_framework_simplejwt.tokens import RefreshToken
+    from rest_framework.views import APIView
+    from rest_framework.response import Response
+    from rest_framework import status
+
+    class LogoutView(APIView):
+        permission_classes = (IsAuthenticated,)
+
+        def post(self, request):
+            try:
+                refresh_token = request.data['refresh']
+                token = RefreshToken(refresh_token)
+                token.blacklist()
+
+                return Response(status=status.HTTP_205_REST_CONTENT)
+            except Exception as e:
+                return Response(status=status.HTTP_400_BAD_REQUEST)
+
+```
+
+```
+auth/urls.py
+    from .views import LogoutView
+
+    urlpatterns = [
+        path('logout/', LogoutView.as_view(), name='auth_logout')
+    ]
+```
+
+```
+Scenario 1
+    SIMPLE_JWT = {
+        'REFRESH_TOKEN_LIFETIME': timedelta(days=15),
+        'ROTATE_REFRESH_TOKENS': True,
+        'BLACKLIST_AFTER_ROTATION': True
+    }
+
+    Login: refresh token --> + outstanding tokens automatically
+    Logout: refresh token --> + blacklisted tokens manually
+    Refresh: old refresh token --> + blacklisted tokens automatically
+            new refresh token --> + outstanding tokens manually
+```
+
+```
+Scenario 2
+    SIMPLE_JWT = {
+        'REFRESH_TOKEN_LIFETIME': timedelta(days=15),
+        'ROTATE_REFRESH_TOKENS': True,
+        'BLACKLIST_AFTER_ROTATION': False
+    }
+
+    Login: refresh token --> + outstanding tokens automatically
+    Logout: refresh token --> + blacklisted tokens manually
+    Refresh: old refresh token --> + blacklisted tokens manually
+            new refresh token --> + outstanding tokens manually
+```
+
+```
+Scenario 3    
+    SIMPLE_JWT = {
+        'REFRESH_TOKEN_LIFETIME': timedelta(days=15),
+        'ROTATE_REFRESH_TOKENS': False,
+        'BLACKLIST_AFTER_ROTATION': False
+    }
+
+    Login: refresh token --> + outstanding tokens automatically
+    Logout: refresh token --> + blacklisted tokens manually
+    Refresh: no actions
+```
+
+```
+auth/views.py
+    class LogoutAllView(APIView):
+        permission_classes = (IsAuthenticated,)
+
+        def post(self, request):
+            tokens = OutstandingToken.objects.filter(user_id=request.user.id)
+            for token in tokens:
+                BlacklistedToken.objects.get_or_create(token=token)
+            
+            return Response(status=status.HTTP_205_RESET_CONTENT)
+```
+
+```
+auth/urls.py
+    from .views import LogoutAllView
+    urlpatterns = [
+
+        path('logout_all', LogoutAllView.as_view(), name='auth_logout_all')
+    ]
+```
+
+### Postman - Login to get tokens
+```
+POST http://127.0.0.1:8000/auth/login/
+No Auth,
+username: fullstackauth
+password: fullstackauth
+
+    {
+        "refresh": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTY0NTQ3MzA0MCwiaWF0IjoxNjQ0MTc3MDQwLCJqdGkiOiJhMDM4ZjE1Yjg2Y2Y0NjIzOWI2OTgyZTI1OGEyODM4YiIsInVzZXJfaWQiOjF9.wpf9-0Naa4nYUMxHIdDjBFoW8r2nBOrxQAAoxaIbZYE",
+        "access": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNjQ0MTc3MzQwLCJpYXQiOjE2NDQxNzcwNDAsImp0aSI6IjgwY2U2ZjMxMzM3MTRlMGVhZjA0MjgwZjY0ZDI5NmQ5IiwidXNlcl9pZCI6MX0.LA_5iu_qDs7YIU4PngzMkTmQ-S6JORM_GMmWjFwqUys"
+    }
+```
+
+### Postman - Logout to add a refresh token to blacklist
+```
+POST http://127.0.0.1:8000/auth/logout/
+Headers:
+    Authorization: Bearer "access token"
+    Content-Type: application/json
+
+Body:
+    raw
+    {
+        "refresh": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTY0NTQ3MzA0MCwiaWF0IjoxNjQ0MTc3MDQwLCJqdGkiOiJhMDM4ZjE1Yjg2Y2Y0NjIzOWI2OTgyZTI1OGEyODM4YiIsInVzZXJfaWQiOjF9.wpf9-0Naa4nYUMxHIdDjBFoW8r2nBOrxQAAoxaIbZYE",
+    }
+
+Result:
+    {}
+```
+
+### Postman - Test using refresh token blacklisted
+```
+POST  http://127.0.0.1:8000/auth/login/refresh/
+Headers:
+    Authorization: Bearer "access token"
+    Content-Type: application/json
+
+Body:
+    raw
+    {
+        "refresh": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTY0NTQ3NDExMywiaWF0IjoxNjQ0MTc4MTEzLCJqdGkiOiJjYTg1YWJlMzNiYTQ0ZGJlYjgxYWJkMGQxYjMxMDBjNSIsInVzZXJfaWQiOjF9.Lg1yJjPqyyAJbDmkd8mTPmF7Ff0MrcoV0e8U2nmJHcA"
+    }
+
+Result:
+    {
+        "detail": "Token is blacklisted",
+        "code": "token_not_valid"
+    }
+```
+
+
+### Postman - Log out all tokens
+```
+POST   http://127.0.0.1:8000/auth/logout_all/
+Headers:
+    Authorization: Bearer "access token"
+    Content-Type: application/json
+
+Result:
+    {}
+```
+
+
+### Error
+[06/Feb/2022 20:10:34] "POST /auth/login/refresh/ HTTP/1.1" 401 58
+
+https://stackoverflow.com/questions/70761933/how-to-solve-error-401-unauthorized-login-in-drf-simple-jwt-user-login
