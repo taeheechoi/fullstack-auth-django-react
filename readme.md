@@ -186,7 +186,8 @@ auth/urls.py
 ### Postman - Login to get tokens
 ```
 POST http://127.0.0.1:8000/auth/login/
-No Auth,
+Header:
+    No Auth
 
 Body:
     username: fullstackauth
@@ -284,14 +285,18 @@ urlpatterns = [
 ### Postman - Register a new user
 ```
 POST http://127.0.0.1:8000/register/
-No Auth,
-username: fullstackauth1
-password: fullstackauth1
-password2: fullstackauth1
-email: fullstackauth1@fullstackauth1.com
-first_name: fullstack
-last_name: auth1
+Headers:
+    No Auth
 
+Body: 
+    username: fullstackauth1
+    password: fullstackauth1
+    password2: fullstackauth1
+    email: fullstackauth1@fullstackauth1.com
+    first_name: fullstack
+    last_name: auth1
+
+Result:
    {
         "username": "fullstackauth1",
         "email": "fullstackauth1@fullstackauth1.com",
@@ -354,13 +359,17 @@ auth/urls.py
 
 ### Postman - Change password
 ```
-PUT http://127.0.0.1:8000/auth/change_password/2/
-No Auth,
+PUT http://127.0.0.1:8000/auth/change_password/1/
+Headers:
+    Authorization: Bearer "access token"
+    Content-Type: application/json
 
-password: new_fullstackauth1
-password2: new_fullstackauth1
-old_password: fullstackauth # because no filter for a specific user yet
+Body:    
+    password: new_fullstackauth
+    password2: new_fullstackauth
+    old_password: fullstackauth # because no filter for a specific user yet
 
+Result:
     {}
 ```
 
@@ -428,19 +437,23 @@ urlpatterns = [
 
 ### Postman - Update user profile
 ```
-PUT http://127.0.0.1:8000/auth/update_user/2/
-No Auth,
+PUT http://127.0.0.1:8000/auth/update_user/1/
+Headers:
+    Authorization: Bearer "access token"
+    Content-Type: application/json
 
-username: new_fullstackauth1
-first_name: new_fullstack1
-last_name: new_auth1
-email: new_fullstack1@fullstack1.com
+Body:    
+    username: new_fullstackauth
+    first_name: new_fullstack
+    last_name: new_auth
+    email: new_fullstack@fullstackauth.com
 
+Result:
     {
-        "username": "new_fullstackauth2",
-        "first_name": "new_fullstack2",
-        "last_name": "new_auth2",
-        "email": "new_fullstackauth2@fullstackauth1.com"
+        "username": "new_fullstackauth",
+        "first_name": "new_fullstack",
+        "last_name": "new_auth",
+        "email": "new_fullstack@fullstackauth.com"
     }
 ```
 
@@ -566,10 +579,13 @@ auth/urls.py
 ### Postman - Login to get tokens
 ```
 POST http://127.0.0.1:8000/auth/login/
-No Auth,
-username: fullstackauth
-password: fullstackauth
+Headers:
+    No Auth
+Body:
+    username: fullstackauth
+    password: fullstackauth
 
+Result:
     {
         "refresh": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTY0NTQ3MzA0MCwiaWF0IjoxNjQ0MTc3MDQwLCJqdGkiOiJhMDM4ZjE1Yjg2Y2Y0NjIzOWI2OTgyZTI1OGEyODM4YiIsInVzZXJfaWQiOjF9.wpf9-0Naa4nYUMxHIdDjBFoW8r2nBOrxQAAoxaIbZYE",
         "access": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNjQ0MTc3MzQwLCJpYXQiOjE2NDQxNzcwNDAsImp0aSI6IjgwY2U2ZjMxMzM3MTRlMGVhZjA0MjgwZjY0ZDI5NmQ5IiwidXNlcl9pZCI6MX0.LA_5iu_qDs7YIU4PngzMkTmQ-S6JORM_GMmWjFwqUys"
