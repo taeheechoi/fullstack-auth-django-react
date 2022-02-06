@@ -1,4 +1,4 @@
-from .serializers import MyTokenObtainPairSerializer, RegisterSerializer, ChangePasswordSerializer
+from .serializers import MyTokenObtainPairSerializer, RegisterSerializer, ChangePasswordSerializer, UpdateUserSerializer
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework import generics
@@ -17,4 +17,10 @@ class RegisterView(generics.CreateAPIView):
 class ChangePasswordView(generics.UpdateAPIView):
     queryset=User.objects.all()
     serializer_class = ChangePasswordSerializer
+    permission_classes = (IsAuthenticated,)
+
+
+class UpdateUserView(generics.UpdateAPIView):
+    queryset=User.objects.all()
+    serializer_class = UpdateUserSerializer
     permission_classes = (IsAuthenticated,)

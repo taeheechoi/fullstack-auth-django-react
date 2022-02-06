@@ -290,6 +290,10 @@ auth/serializers.py
                 raise serializers.ValidationError({'old_password': 'Old password is not correct'})
 
         def update(self, instance, validated_data):
+            user = self.context['request'].user
+            if user.pk != instance.pk:
+                raise serializers.ValidationError({'authorize': "You don't have permission for this user."})
+
             instance.set_password(validated_data['password'])
 
             return instance
@@ -316,12 +320,89 @@ auth/urls.py
 
 ### Postman
 ```
-POST http://127.0.0.1:8000/auth/change_password/1/
+PUT http://127.0.0.1:8000/auth/change_password/2/
 No Auth,
 
-password: fullstackauth1
-password2: fullstackauth1
-old_password: fullstackauth
+password: new_fullstackauth1
+password2: new_fullstackauth1
+old_password: fullstackauth # because no filter for a specific user yet
+```
+
+```
+{}
+```
+
+### Update Profile
+```
+auth/serializers.py
+    class UpdateUserSerializer(serializers.ModelSerializer):
+        email = serializers.EmailField(required=True)
+
+        class Meta:
+            model = User
+            fields = ('username', 'first_name', 'last_name', 'email')
+            extra_kwargs ={
+                'first_name': {'required': True},
+                'last_name' : {'required': True},
+            }
+
+        def validate_email(self, value):
+            user = self.context['request'].user
+            if User.objects.exclude(pk=user.pk).filter(email=value).exists():
+                raise serializers.ValidationError({'email': 'This email is already in use.'})
+            
+            return value
+
+        def validate_username(self, value):
+            user = self.context['request'].user
+            if User.objects.exclude(pk=user.pk).filter(username=value).exists():
+                raise serializers.ValidationError({'user': 'This user name is already in use.'})
+            
+            return value    
+
+        def update(self, instance, validated_data):
+            user = self.context['request'].user
+            
+            if user.pk != instance.pk:
+                raise serializers.ValidationError({'authorize': "You don't have permission for this user."})
+
+            instance.first_name = validated_data['first_name']
+            instance.last_name = validated_data['last_name']
+            instance.email = validated_data['email']
+            instance.username = validated_data['username']
+
+            instance.save()
+            return instance
+
+```
+
+```
+auth/views.py
+    from .serializers import UpdateUserSerializer
+
+    class UpdateUserView(generics.UpdateAPIView):
+        queryset=User.objects.all()
+        serializer_class = UpdateUserSerializer
+        permission_classes = (IsAuthenticated,)
+```
+
+```
+from .views import MyTokenObtainPairView, RegisterView, ChangePasswordView, UpdateUserView
+
+urlpatterns = [
+    path('update_user/<int:pk>/', UpdateUserView.as_view(), name='auth_update_user')
+]
+```
+
+### Postman
+```
+PUT http://127.0.0.1:8000/auth/update_user/2/
+No Auth,
+
+username: new_fullstackauth1
+first_name: new_fullstack1
+last_name: new_auth1
+email: new_fullstack1@fullstack1.com
 ```
 
 ```
