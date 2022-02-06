@@ -266,3 +266,64 @@ last_name: auth1
         "last_name": "auth1"
     }
 ```
+
+### Change Password
+```
+auth/serializers.py
+    class ChangePasswordSerializer(serializers.ModelSerializer):
+        password = serializers.CharField(write_only=True, required=True, validators=[UniqueValidator(queryset=User.objects.all())])
+        password1 = serializers.CharField(write_only=True, required=True)
+        old_password = serializers.CharField(write_only=True, required=True)
+
+        class Meta:
+            model = User
+            fields = ('old_password', 'password', 'password1')
+
+        def validate(self, attrs):
+            if attrs['password'] != attrs['password1']:
+                raise serializers.ValidationError({'password': 'Password fields did not match.'})
+            return attrs
+
+        def validate_old_password(self, value):
+            user = self.context['request'].user
+            if not user.check_password(value):
+                raise serializers.ValidationError({'old_password': 'Old password is not correct'})
+
+        def update(self, instance, validated_data):
+            instance.set_password(validated_data['password'])
+
+            return instance
+```
+
+```
+auth/views.py
+    from rest_framework.permissions import IsAuthenticated
+    
+    class UpdateView(generics.UpdateAPIView):
+        queryset=User.objects.all()
+        serializer_class = ChangePasswordSerializer
+        permission_classes = (IsAuthenticated,)
+```
+
+```
+auth/urls.py
+    from .views import ChangePasswordView
+
+    urlpatterns = [
+        path('change_password/<int:pk>/', ChangePasswordView.as_view(), name='change_password'),
+    ]
+```
+
+### Postman
+```
+POST http://127.0.0.1:8000/auth/change_password/1/
+No Auth,
+
+password: fullstackauth1
+password2: fullstackauth1
+old_password: fullstackauth
+```
+
+```
+{}
+```
