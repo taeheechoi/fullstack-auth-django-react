@@ -93,12 +93,7 @@ password: example
 ```
 settings.py
     INSTALLED_APPS = [
-        'django.contrib.admin',
-        'django.contrib.auth',
-        'django.contrib.contenttypes',
-        'django.contrib.sessions',
-        'django.contrib.messages',
-        'django.contrib.staticfiles',
+        'rest_framework',
         -- 'auth' DO NOT ADD auth as we will use 'django.contrib.auth',
     ]
 
@@ -150,7 +145,7 @@ auth/views.py
 ```
 
 ```
-uils.py
+urls.py
     from django.urls import path, include
 
     urlpatterns = [
@@ -177,9 +172,7 @@ POST http://127.0.0.1:8000/auth/login/
 No Auth,
 username: fullstackauth
 password: fullstackauth
-```
 
-```
     {
         "refresh": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTY0NDE4ODE1MywiaWF0IjoxNjQ0MTAxNzUzLCJqdGkiOiI0YmYyM2Q1MWQxMTE0NmM2OWQ5MzBlNzM4NzFkNTljNSIsInVzZXJfaWQiOjEsInVzZXJuYW1lIjoiZnVsbHN0YWNrYXV0aCJ9.9gOxe13wEmr5czeb2xy79Pkp07L3stVzfZoogni05RM",
         "access": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNjQ0MTAyMDUzLCJpYXQiOjE2NDQxMDE3NTMsImp0aSI6ImUzYWUxYjQ1NzU0MzQxM2Y4NmMxYWNhMzc1YTQ5YzE3IiwidXNlcl9pZCI6MSwidXNlcm5hbWUiOiJmdWxsc3RhY2thdXRoIn0.5hSdBrotZtKtzmdiuT0ALNZvuS5wjBjI6Aa9ohSuZpA"
@@ -256,9 +249,7 @@ password2: fullstackauth1
 email: fullstackauth1@fullstackauth1.com
 first_name: fullstack
 last_name: auth1
-```
 
-```
    {
         "username": "fullstackauth1",
         "email": "fullstackauth1@fullstackauth1.com",
@@ -271,7 +262,7 @@ last_name: auth1
 ```
 auth/serializers.py
     class ChangePasswordSerializer(serializers.ModelSerializer):
-        password = serializers.CharField(write_only=True, required=True, validators=[UniqueValidator(queryset=User.objects.all())])
+        password = serializers.CharField(write_only=True, required=True, validators=[validate_password])
         password1 = serializers.CharField(write_only=True, required=True)
         old_password = serializers.CharField(write_only=True, required=True)
 
@@ -288,6 +279,7 @@ auth/serializers.py
             user = self.context['request'].user
             if not user.check_password(value):
                 raise serializers.ValidationError({'old_password': 'Old password is not correct'})
+            return value
 
         def update(self, instance, validated_data):
             user = self.context['request'].user
@@ -326,10 +318,8 @@ No Auth,
 password: new_fullstackauth1
 password2: new_fullstackauth1
 old_password: fullstackauth # because no filter for a specific user yet
-```
 
-```
-{}
+    {}
 ```
 
 ### Update Profile
@@ -387,7 +377,7 @@ auth/views.py
 ```
 
 ```
-from .views import MyTokenObtainPairView, RegisterView, ChangePasswordView, UpdateUserView
+from .views import UpdateUserView
 
 urlpatterns = [
     path('update_user/<int:pk>/', UpdateUserView.as_view(), name='auth_update_user')
@@ -403,8 +393,23 @@ username: new_fullstackauth1
 first_name: new_fullstack1
 last_name: new_auth1
 email: new_fullstack1@fullstack1.com
+
+    {
+        "username": "new_fullstackauth2",
+        "first_name": "new_fullstack2",
+        "last_name": "new_auth2",
+        "email": "new_fullstackauth2@fullstackauth1.com"
+    }
 ```
 
+### Logout
 ```
-{}
+INSTALLED_APPS = [
+    'rest_framework_simplejwt.token_blacklist',
+]
+```
+```
+(venv) ~/development/fullstack-auth-django-react/backend/fullstack_auth$ python manage.py makemigrations
+(venv) ~/development/fullstack-auth-django-react/backend/fullstack_auth$ python manage.py migrate
+
 ```
