@@ -28,6 +28,7 @@ class UpdateUserView(generics.UpdateAPIView):
     queryset=User.objects.all()
     serializer_class = UpdateUserSerializer
     permission_classes = (IsAuthenticated,)
+    lookup_field = 'username'
 
 
 class LogoutView(APIView):

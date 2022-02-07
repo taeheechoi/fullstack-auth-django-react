@@ -1,9 +1,11 @@
 ### Configure VS Code for Django
+
 https://code.visualstudio.com/docs/python/tutorial-django
 
 Interpreter (Ctrl+Shift+P) ./backend/venv/bin/python3
 
-Debugger. Add configure. 
+Debugger. Add configure.
+
 ```
     "configurations": [
         {
@@ -22,7 +24,9 @@ Debugger. Add configure.
 ```
 
 ### Database - Postgres
+
 docker-compose.yml
+
 ```
     version: '3.1'
 
@@ -49,6 +53,7 @@ docker-compose.yml
         driver: local
 
 ```
+
 ```
 ~/development/fullstack-auth-django-react$ docker-compose up -d
 ~/development/fullstack-auth-django-react$ docker ps
@@ -66,14 +71,14 @@ password: example
     CREATE USER fullstackauth WITH PASSWORD 'fullstackauth' CREATEDB;
 
     SELECT usename AS role_name,
-    CASE 
-        WHEN usesuper AND usecreatedb THEN 
+    CASE
+        WHEN usesuper AND usecreatedb THEN
         CAST('superuser, create database' AS pg_catalog.text)
-        WHEN usesuper THEN 
+        WHEN usesuper THEN
             CAST('superuser' AS pg_catalog.text)
-        WHEN usecreatedb THEN 
+        WHEN usecreatedb THEN
             CAST('create database' AS pg_catalog.text)
-        ELSE 
+        ELSE
             CAST('' AS pg_catalog.text)
     END role_attributes
     FROM pg_catalog.pg_user
@@ -81,13 +86,14 @@ password: example
 
 ```
 
-### Backend - Django 
+### Backend - Django
+
 Training from: https://medium.com/django-rest/django-rest-framework-jwt-authentication-94bee36f2af8
 
 ```
 ~/development/fullstack-auth-django-react/backend$ python3 -m venv venv
 ~/development/fullstack-auth-django-react/backend$ source venv/bin/activate
-(venv) ~/development/fullstack-auth-django-react/backend$ pip install django djangorestframework psycopg2-binary djangorestframework-simplejwt
+(venv) ~/development/fullstack-auth-django-react/backend$ pip install django djangorestframework psycopg2-binary djangorestframework-simplejwt django-cors-headers
 (venv) ~/development/fullstack-auth-django-react/backend$ django-admin startproject fullstack_auth
 (venv) ~/development/fullstack-auth-django-react/backend/fullstack_auth$ python manage.py startapp auth
 ```
@@ -99,7 +105,12 @@ settings.py
     INSTALLED_APPS = [
         'rest_framework',
         'rest_framework_simplejwt', if localizations/translations needed
+        'corsheaders',
         -- 'auth' DO NOT ADD auth as we will use 'django.contrib.auth',
+    ]
+
+    MIDDLEWARE = [
+        'corsheaders.middleware.CorsMiddleware',
     ]
 
     DATABASES = {
@@ -112,7 +123,7 @@ settings.py
             'PORT': '5432',
         }
     }
-    
+
     REST_FRAMEWORK = {
         'DEFAULT_AUTHENTICATION_CLASSES': [
             'rest_framework_simplejwt.authentication.JWTAuthentication',
@@ -125,15 +136,20 @@ settings.py
         'ROTATE_REFRESH_TOKENS': True,
     }
 
+    CORS_ALLOWED_ORIGINS = [
+        "http://localhost:3000",
+    ]
+
 ```
 
 ```
-(venv) ~/development/fullstack-auth-django-react/backend/fullstack_auth$ python manage.py createsuperuser 
+(venv) ~/development/fullstack-auth-django-react/backend/fullstack_auth$ python manage.py createsuperuser
 ID: fullstackauth
 PW: fullstackauth
 ```
 
 ### Login User
+
 ```
 auth/serializers.py
     from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
@@ -184,6 +200,7 @@ auth/urls.py
 ```
 
 ### Postman - Login to get tokens
+
 ```
 POST http://127.0.0.1:8000/auth/login/
 Header:
@@ -201,6 +218,7 @@ Result:
 ```
 
 ### Postman - Refresh tokens
+
 ```
 POST http://127.0.0.1:8000/auth/refresh/
 Headers:
@@ -220,8 +238,8 @@ Result:
     }
 ```
 
+### Register User
 
-### Register User 
 ```
 auth/serializers.py
     from rest_framework import serializers
@@ -283,12 +301,13 @@ urlpatterns = [
 ```
 
 ### Postman - Register a new user
+
 ```
 POST http://127.0.0.1:8000/register/
 Headers:
     No Auth
 
-Body: 
+Body:
     username: fullstackauth1
     password: fullstackauth1
     password2: fullstackauth1
@@ -306,6 +325,7 @@ Result:
 ```
 
 ### Change Password
+
 ```
 auth/serializers.py
     class ChangePasswordSerializer(serializers.ModelSerializer):
@@ -341,11 +361,12 @@ auth/serializers.py
 ```
 auth/views.py
     from rest_framework.permissions import IsAuthenticated
-    
+
     class UpdateView(generics.UpdateAPIView):
         queryset=User.objects.all()
         serializer_class = ChangePasswordSerializer
         permission_classes = (IsAuthenticated,)
+        lookup_field = 'username' # to lookup by username instead of pk
 ```
 
 ```
@@ -353,18 +374,19 @@ auth/urls.py
     from .views import ChangePasswordView
 
     urlpatterns = [
-        path('change_password/<int:pk>/', ChangePasswordView.as_view(), name='change_password'),
+        path('change_password/<username>/', ChangePasswordView.as_view(), name='change_password'),
     ]
 ```
 
 ### Postman - Change password
+
 ```
 PUT http://127.0.0.1:8000/auth/change_password/1/
 Headers:
     Authorization: Bearer "access token"
     Content-Type: application/json
 
-Body:    
+Body:
     password: new_fullstackauth
     password2: new_fullstackauth
     old_password: fullstackauth # because no filter for a specific user yet
@@ -374,6 +396,7 @@ Result:
 ```
 
 ### Update Profile
+
 ```
 auth/serializers.py
     class UpdateUserSerializer(serializers.ModelSerializer):
@@ -391,19 +414,19 @@ auth/serializers.py
             user = self.context['request'].user
             if User.objects.exclude(pk=user.pk).filter(email=value).exists():
                 raise serializers.ValidationError({'email': 'This email is already in use.'})
-            
+
             return value
 
         def validate_username(self, value):
             user = self.context['request'].user
             if User.objects.exclude(pk=user.pk).filter(username=value).exists():
                 raise serializers.ValidationError({'user': 'This user name is already in use.'})
-            
-            return value    
+
+            return value
 
         def update(self, instance, validated_data):
             user = self.context['request'].user
-            
+
             if user.pk != instance.pk:
                 raise serializers.ValidationError({'authorize': "You don't have permission for this user."})
 
@@ -436,13 +459,14 @@ urlpatterns = [
 ```
 
 ### Postman - Update user profile
+
 ```
 PUT http://127.0.0.1:8000/auth/update_user/1/
 Headers:
     Authorization: Bearer "access token"
     Content-Type: application/json
 
-Body:    
+Body:
     username: new_fullstackauth
     first_name: new_fullstack
     last_name: new_auth
@@ -458,11 +482,13 @@ Result:
 ```
 
 ### Logout
+
 ```
 INSTALLED_APPS = [
     'rest_framework_simplejwt.token_blacklist',
 ]
 ```
+
 ```
 (venv) ~/development/fullstack-auth-django-react/backend/fullstack_auth$ python manage.py makemigrations
 (venv) ~/development/fullstack-auth-django-react/backend/fullstack_auth$ python manage.py migrate
@@ -475,7 +501,7 @@ Blacklist not compatible with custom fields (MyTokenObtainPairSerializer) --> De
 
 ```
 auth/urls.py
-    from .views import TokenObtainPairView # MyTokenObtainPairView, custom field not supported by blacklist 
+    from .views import TokenObtainPairView # MyTokenObtainPairView, custom field not supported by blacklist
 
     urlpatterns = [
         path('login/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
@@ -542,7 +568,7 @@ Scenario 2
 ```
 
 ```
-Scenario 3    
+Scenario 3
     SIMPLE_JWT = {
         'REFRESH_TOKEN_LIFETIME': timedelta(days=15),
         'ROTATE_REFRESH_TOKENS': False,
@@ -563,7 +589,7 @@ auth/views.py
             tokens = OutstandingToken.objects.filter(user_id=request.user.id)
             for token in tokens:
                 BlacklistedToken.objects.get_or_create(token=token)
-            
+
             return Response(status=status.HTTP_205_RESET_CONTENT)
 ```
 
@@ -577,6 +603,7 @@ auth/urls.py
 ```
 
 ### Postman - Login to get tokens
+
 ```
 POST http://127.0.0.1:8000/auth/login/
 Headers:
@@ -593,6 +620,7 @@ Result:
 ```
 
 ### Postman - Logout to add a refresh token to blacklist
+
 ```
 POST http://127.0.0.1:8000/auth/logout/
 Headers:
@@ -610,6 +638,7 @@ Result:
 ```
 
 ### Postman - Test using refresh token blacklisted
+
 ```
 POST  http://127.0.0.1:8000/auth/login/refresh/
 Headers:
@@ -629,8 +658,8 @@ Result:
     }
 ```
 
-
 ### Postman - Log out all tokens
+
 ```
 POST   http://127.0.0.1:8000/auth/logout_all/
 Headers:
@@ -641,8 +670,269 @@ Result:
     {}
 ```
 
-
 ### Error
+
 [06/Feb/2022 20:10:34] "POST /auth/login/refresh/ HTTP/1.1" 401 58
 
 https://stackoverflow.com/questions/70761933/how-to-solve-error-401-unauthorized-login-in-drf-simple-jwt-user-login
+
+### Frontend - React
+
+```
+~/development/fullstack-auth-django-react$ sudo npm install -g create-react-app
+~/development/fullstack-auth-django-react$ npx create-react-app frontend
+~/development/fullstack-auth-django-react$ cd frontend
+~/development/fullstack-auth-django-react/frontend$ npm start
+~/development/fullstack-auth-django-react/frontend$ npm install @mui/material @emotion/react @emotion/styled @mui/icons-material axios react-cookie react-router-dom@6
+
+```
+Auto format: Shift + Alt + F
+
+### SignIn - Dummy Page
+``` js
+components/SignIn.js
+    import React from 'react';
+
+    const SignIn = () => {
+        return (
+            <div>
+                <h1> Sign In </h1>
+            </div>
+        )
+    };
+
+    export default SignIn;
+```
+
+### Profile - Dummy Page
+``` js
+components/Profile.js
+    import React from 'react';
+
+    const Profile = () => {
+        return (
+            <div>
+                <h1> Profile </h1>
+            </div>
+        )
+    };
+
+    export default Profile;
+```
+
+### Route Pages
+``` js
+index.js
+    import { BrowserRouter } from 'react-router-dom';
+
+    ReactDOM.render(
+    <React.StrictMode>
+        <BrowserRouter>
+            <App />
+        </BrowserRouter>
+    </React.StrictMode>,
+    document.getElementById('root')
+    );    
+```
+
+``` js
+App.js
+    function App() {
+        return (
+            <div className="App">
+                <h1>Fullstack Auth Django React </h1>
+                <Routes>
+                    <Route path='/' element={<SignIn/>} />
+                    <Route path='profile' element={<Profile/>}/>
+                </Routes>
+            </div>
+        );
+    }
+```
+
+### Sign In
+
+``` js
+components/SignIn.js
+https://github.com/mui/material-ui/blob/master/docs/data/material/getting-started/templates/sign-in/SignIn.js
+
+    import {
+        Avatar,
+        Box,
+        Button,
+        Checkbox,
+        Container,
+        createTheme,
+        CssBaseline,
+        FormControlLabel,
+        Grid,
+        Link,
+        TextField,
+        ThemeProvider,
+        Typography
+        } from '@mui/material';
+    import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
+
+    const Copyright = (props) => {
+        return (
+            <Typography variant="body2" color="text.secondary" align="center" {...props}>
+            {"Copyright ©"}
+            <Link color="inherit" href="#">
+                Tae Hee Choi
+            </Link>{' '}
+            {new Date().getFullYear()}
+            {"."}
+            </Typography>
+        )
+    }
+
+    const theme = createTheme()
+
+    const SignIn = () => {
+    const handleSubmit = (e) => {
+        e.preventDefault()
+        const data = new FormData(e.currentTarget);
+        // eslint-disable-next-line no-console
+        console.log({
+        email: data.get('email'),
+        password: data.get('password'),
+        });
+    }
+    return (
+        <ThemeProvider theme={theme}>
+        <Container component="main" maxWidth="xs">
+            <CssBaseline />
+            <Box
+            sx={{
+                marginTop: 8,
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center'
+            }}
+            >
+            <Avatar sx={{ m: 1, bgcolor: 'secondary.main' }}>
+                <LockOutlinedIcon />
+            </Avatar>
+            <Typography component="h1" variant="h5">
+                Sign In
+            </Typography>
+            <Box component="form" onSubmit={handleSubmit} noValidate sx={{ mt: 1 }}>
+                <TextField
+                margin="normal"
+                required
+                fullWidth
+                id="email"
+                label="Email Address"
+                name="email"
+                autoComplete="email"
+                autoFocus
+                />
+                <TextField
+                margin="normal"
+                required
+                fullWidth
+                name="password"
+                label="password"
+                type="password"
+                id="password"
+                autoComplete="current-password"
+                />
+                <FormControlLabel
+                control={<Checkbox value="remember" color="primary" />}
+                label="Remember me"
+                />
+                <Button
+                type="submit"
+                fullWidth
+                variant="contained"
+                sx={{ mt: 3, mb: 2 }}
+                >
+                Sign In
+                </Button>
+                <Grid container>
+                <Grid item xs>
+                    <Link href="#" variant="body2">
+                    Forgot Password?
+                    </Link>
+                </Grid>
+                <Grid item>
+                    <Link href="#" variant="body2">
+                    {"Don't have an account? Sign Up"}
+                    </Link>
+                </Grid>
+                </Grid>
+            </Box>
+            </Box>
+            <Copyright sx={{ mt: 8, mb: 4 }} />
+        </Container>
+        </ThemeProvider>
+    )
+    };
+
+    export default SignIn;
+```
+
+### SignIn Axios to API
+``` js
+components/SignIn.js
+    import axios from 'axios';
+
+    const handleSubmit = (e) => {
+        e.preventDefault()
+        const data = new FormData(e.currentTarget);
+
+        axios.post(`http://127.0.0.1:8000/auth/login/`, {
+            username: data.get('username'),
+            password: data.get('password')
+        })
+        .then(res => {
+            console.log(res.data);
+        })
+    }
+
+{refresh: 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ0b2tlbl90e…iOjF9.FnZeIgOHn_w9VLMw_wSkeAnnN3c9lFcU1k3nfw4BH1k', access: 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ0b2tlbl90e…I6MX0.ZKhMb6635NvJSu0WleMg3V2vJ4WYTRlKhdV5wkdAgIA'}
+```
+
+### Token to Cookies and Navigate to Profile
+``` js
+index.js
+    import { CookiesProvider } from 'react-cookie';
+
+    ReactDOM.render(
+        <React.StrictMode>
+            <CookiesProvider>
+                <BrowserRouter>
+                    <App />
+                </BrowserRouter>
+            </CookiesProvider>
+        </React.StrictMode>,
+    document.getElementById('root')
+    );
+```
+
+``` js
+components/SignIn.js
+    import { useCookies } from 'react-cookie';
+    import { useNavigate } from 'react-router-dom';
+    
+    let navigate = useNavigate()
+
+    const [cookies, setCookies] = useCookies(['user'])
+
+    const handleSubmit = (e) => {
+        e.preventDefault()
+        const data = new FormData(e.currentTarget);
+
+        axios.post(`http://127.0.0.1:8000/auth/login/`, {
+            username: data.get('username'),
+            password: data.get('password')
+        })
+        .then(res => {
+            setCookies('access', res.data.access, {path: '/'}) //# path:'/' signifies that the cookie is available for all the pages of the website
+            setCookies('refresh', res.data.refresh, {path: '/'})
+            navigate('/profile')
+        })
+    }
+```
+
+https://dev.to/cotter/localstorage-vs-cookies-all-you-need-to-know-about-storing-jwt-tokens-securely-in-the-front-end-15id
