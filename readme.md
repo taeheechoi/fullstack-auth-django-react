@@ -936,5 +936,154 @@ components/SignIn.js
 
 https://dev.to/cotter/localstorage-vs-cookies-all-you-need-to-know-about-storing-jwt-tokens-securely-in-the-front-end-15id
 
-
 https://www.robinwieruch.de/react-hooks-fetch-data/
+
+
+
+### Backend - Todo
+```
+~/development/fullstack-auth-django-react/backend/fullstack_auth$ python manage.py startapp todo
+```
+
+```py
+todo/models.py
+
+    from django.db import models
+    from django.contrib.auth.models import User
+
+    # Create your models here.
+    class Todo(models.Model):
+        title = models.CharField(max_length=255, blank=False)
+        description = models.TextField()
+        is_complete = models.BooleanField(default=False)
+        created_by= models.ForeignKey(User, on_delete=models.CASCADE)
+        created_at=models.DateTimeField(auto_now_add=True)
+        updated_at=models.DateTimeField(auto_now=True)
+
+        class Meta:
+            ordering = ('-created_at',)
+```
+
+``` py
+settings.py
+
+    INSTALLED_APPS = [
+        'todo'
+    ]
+
+```
+
+```
+~/development/fullstack-auth-django-react/backend/fullstack_auth$ python manage.py makemigrations
+~/development/fullstack-auth-django-react/backend/fullstack_auth$ python manage.py migrate
+```
+### Postman - Create a new todo
+
+```
+POST   http://127.0.0.1:8000/todo/
+Headers:
+    Authorization: Bearer "access token"
+    Content-Type: application/json
+Body:
+    {
+        "title": "title",
+        "description" : "description"
+    }
+
+Result:
+    {
+        "id": 1,
+        "title": "title",
+        "description": "description",
+        "is_complete": false
+    }
+```
+
+
+### Postman - Get all todos
+
+```
+GET   http://127.0.0.1:8000/todo/
+Headers:
+    Authorization: Bearer "access token"
+    Content-Type: application/json
+
+Result:
+[
+    {
+        "id": 2,
+        "title": "title2",
+        "description": "description2",
+        "is_complete": false
+    },
+    {
+        "id": 1,
+        "title": "title1",
+        "description": "description1",
+        "is_complete": false
+    }
+]
+```
+
+### Postman - Get a todo
+
+```
+GET   http://127.0.0.1:8000/todo/2
+Headers:
+    Authorization: Bearer "access token"
+    Content-Type: application/json
+
+Result:
+[
+    {
+        "id": 2,
+        "title": "title2",
+        "description": "description2",
+        "is_complete": false
+    }
+]
+```
+
+### Postman - Update a todo
+
+```
+PUT   http://127.0.0.1:8000/todo/2
+Headers:
+    Authorization: Bearer "access token"
+    Content-Type: application/json
+
+Body:
+    {
+        "id": 2,
+        "title": "title12",
+        "description": "description12",
+        "is_complete": true
+    }
+
+Result:
+[
+    {
+        "id": 2,
+        "title": "title12",
+        "description": "description12",
+        "is_complete": true
+    }
+]
+```
+
+### Postman - Delete a todo
+
+```
+DELETE   http://127.0.0.1:8000/todo/2
+Headers:
+    Authorization: Bearer "access token"
+    Content-Type: application/json
+
+Body:
+    {
+        "id": 2,
+    }
+
+Result:
+    {}
+```
