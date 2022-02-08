@@ -303,7 +303,7 @@ urlpatterns = [
 ### Postman - Register a new user
 
 ```
-POST http://127.0.0.1:8000/register/
+POST http://127.0.0.1:8000/auth/register/
 Headers:
     No Auth
 
@@ -362,11 +362,10 @@ auth/serializers.py
 auth/views.py
     from rest_framework.permissions import IsAuthenticated
 
-    class UpdateView(generics.UpdateAPIView):
+    class ChangePasswordView(generics.UpdateAPIView):
         queryset=User.objects.all()
         serializer_class = ChangePasswordSerializer
         permission_classes = (IsAuthenticated,)
-        lookup_field = 'username' # to lookup by username instead of pk
 ```
 
 ```
@@ -374,7 +373,7 @@ auth/urls.py
     from .views import ChangePasswordView
 
     urlpatterns = [
-        path('change_password/<username>/', ChangePasswordView.as_view(), name='change_password'),
+        path('change_password/<int:pk>/', ChangePasswordView.as_view(), name='change_password'),
     ]
 ```
 
@@ -936,3 +935,6 @@ components/SignIn.js
 ```
 
 https://dev.to/cotter/localstorage-vs-cookies-all-you-need-to-know-about-storing-jwt-tokens-securely-in-the-front-end-15id
+
+
+https://www.robinwieruch.de/react-hooks-fetch-data/

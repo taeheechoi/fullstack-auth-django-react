@@ -53,7 +53,7 @@ const SignIn = () => {
       password: data.get('password')
     })
       .then(res => {
-        // console.log(res);
+        console.log(res);
         // console.log(res.data);
         setCookies('access', res.data.access, {path: '/'}) //# path:'/' signifies that the cookie is available for all the pages of the website
         setCookies('refresh', res.data.refresh, {path: '/'})
