@@ -6,7 +6,7 @@ Interpreter (Ctrl+Shift+P) ./backend/venv/bin/python3
 
 Debugger. Add configure.
 
-```
+```json
     "configurations": [
         {
             "name": "Python: Django",
@@ -27,7 +27,7 @@ Debugger. Add configure.
 
 docker-compose.yml
 
-```
+```yml
     version: '3.1'
 
     services:
@@ -65,7 +65,7 @@ username: postgres
 password: example
 ```
 
-```
+```sql
     CREATE DATABASE fullstackauth;
 
     CREATE USER fullstackauth WITH PASSWORD 'fullstackauth' CREATEDB;
@@ -98,7 +98,7 @@ Training from: https://medium.com/django-rest/django-rest-framework-jwt-authenti
 (venv) ~/development/fullstack-auth-django-react/backend/fullstack_auth$ python manage.py startapp auth
 ```
 
-```
+```py
 settings.py
     from datetime import timedelta
 
@@ -150,7 +150,7 @@ PW: fullstackauth
 
 ### Login User
 
-```
+```py
 auth/serializers.py
     from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
@@ -165,7 +165,7 @@ auth/serializers.py
             return token
 ```
 
-```
+```py
 auth/views.py
     from .serializers import MyTokenObtainPairSerializer
     from rest_framework_simplejwt.views import TokenObtainPairView
@@ -177,7 +177,7 @@ auth/views.py
 
 ```
 
-```
+```py
 urls.py
     from django.urls import path, include
 
@@ -187,7 +187,7 @@ urls.py
     ]
 ```
 
-```
+```py
 auth/urls.py
     from django.urls import path
     from .views import MyTokenObtainPairView
@@ -498,7 +498,7 @@ Cron job for blacklist's flushexpiredtokens: delete any tokens from the outstand
 
 Blacklist not compatible with custom fields (MyTokenObtainPairSerializer) --> Default view TokenObtainPairSerializer is needed
 
-```
+```py
 auth/urls.py
     from .views import TokenObtainPairView # MyTokenObtainPairView, custom field not supported by blacklist
 
@@ -507,7 +507,7 @@ auth/urls.py
     ]
 ```
 
-```
+```py
 auth/views.py
     from rest_framework_simplejwt.tokens import RefreshToken
     from rest_framework.views import APIView
@@ -529,7 +529,7 @@ auth/views.py
 
 ```
 
-```
+```py
 auth/urls.py
     from .views import LogoutView
 
@@ -579,7 +579,7 @@ Scenario 3
     Refresh: no actions
 ```
 
-```
+```py
 auth/views.py
     class LogoutAllView(APIView):
         permission_classes = (IsAuthenticated,)
@@ -592,7 +592,7 @@ auth/views.py
             return Response(status=status.HTTP_205_RESET_CONTENT)
 ```
 
-```
+```py
 auth/urls.py
     from .views import LogoutAllView
     urlpatterns = [
