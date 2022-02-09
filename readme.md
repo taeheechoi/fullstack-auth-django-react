@@ -1087,3 +1087,41 @@ Body:
 Result:
     {}
 ```
+
+
+### Frontend - Todo
+```
+npm install @mui/x-data-grid
+```
+
+```js
+App.js
+    <Routes>
+        <Route path='todo' element={<Todo/>}/>
+    </Routes>
+
+
+```
+
+
+
+### References:
+https://www.robinwieruch.de/react-hooks-fetch-data/
+
+https://jkaylight.medium.com/django-rest-framework-with-postgresql-a-crud-tutorial-8a34283e9c12
+
+https://medium.com/django-rest/django-rest-framework-creating-views-and-serializers-b76a96fb6fb7
+
+https://www.digitalocean.com/community/tutorials/4-uses-of-javascripts-arraymap-you-should-know
+
+https://www.npmjs.com/package/react-cookie
+
+https://github.com/CryceTruly/django-rest-api
+
+https://mui.com/components/data-grid/getting-started/
+
+https://mui.com/components/material-icons/?query=list
+
+https://medium.com/geekculture/the-best-saas-tech-stack-for-your-startup-application-fad631dcd1a7
+
+https://medium.com/geekculture/the-best-saas-tech-stack-for-your-startup-application-fad631dcd1a7

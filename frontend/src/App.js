@@ -2,6 +2,7 @@ import { Route, Routes } from 'react-router-dom';
 import './App.css';
 import Profile from './components/Profile';
 import SignIn from './components/SignIn';
+import Todo from './components/Todo';
 
 
 function App() {
@@ -11,6 +12,7 @@ function App() {
       <Routes>
         <Route path='/' element={<SignIn/>} />
         <Route path='profile' element={<Profile/>}/>
+        <Route path='todo' element={<Todo/>}/>
       </Routes>
     </div>
   );

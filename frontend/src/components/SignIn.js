@@ -42,24 +42,31 @@ const SignIn = () => {
   const handleSubmit = (e) => {
     e.preventDefault()
     const data = new FormData(e.currentTarget);
-    // eslint-disable-next-line no-console
-    // console.log({
-    //   email: data.get('email'),
-    //   password: data.get('password'),
-    // });
-
-    axios.post(`http://127.0.0.1:8000/auth/login/`, {
-      username: data.get('username'),
-      password: data.get('password')
-    })
-      .then(res => {
-        console.log(res);
-        // console.log(res.data);
-        setCookies('access', res.data.access, {path: '/'}) //# path:'/' signifies that the cookie is available for all the pages of the website
-        setCookies('refresh', res.data.refresh, {path: '/'})
-        navigate('/profile')
-
+    const signIn = async () => {
+      const result = await axios.post(`http://127.0.0.1:8000/auth/login/`, {
+        username: data.get('username'),
+        password: data.get('password')
       })
+      
+      setCookies('access', result.data.access, {path: '/'}) //# path:'/' signifies that the cookie is available for all the pages of the website
+      setCookies('refresh', result.data.refresh, {path: '/'})
+      navigate('/todo')
+    }
+
+    signIn()
+
+    // axios.post(`http://127.0.0.1:8000/auth/login/`, {
+    //   username: data.get('username'),
+    //   password: data.get('password')
+    // })
+    //   .then(res => {
+    //     console.log(res);
+    //     // console.log(res.data);
+    //     setCookies('access', res.data.access, {path: '/'}) //# path:'/' signifies that the cookie is available for all the pages of the website
+    //     setCookies('refresh', res.data.refresh, {path: '/'})
+    //     navigate('/todo')
+
+    //   })
 
   }
   return (
