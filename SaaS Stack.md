@@ -29,11 +29,11 @@ Backend language: Python,
 
 Python framework: Django or Flask
 
-Frontene languate: React
+Front language: React
 
 Microservices: Docker
 
-Microservices clusting system(container ochestration tool): Amazon ECS Fargate
+Microservices clusting system(container orchestration tool): Amazon ECS Fargate
 
 Multi-tenant Architecture
 
